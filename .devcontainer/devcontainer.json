@@ -16,7 +16,7 @@
     "VAULT_TOKEN": "root"
   },
     // After the container starts, run Vault in dev mode
-    "postStartCommand": "vault server -dev -dev-root-token-id=root & sleep 2 && vault secrets enable -path=secrets kv && vault auth enable approle",
+    "postStartCommand": "mkdir -p /run/postgresql /var/log/postgresql && chown -R postgres /run/postgresql /var/log/postgresql && su postgres -c 'initdb -D /var/lib/postgresql/data || true' && su postgres -c 'pg_ctl -D /var/lib/postgresql/data -l /var/log/postgresql/postgresql.log start' && sleep 2 && su postgres -c \"psql -c \\\"CREATE USER vaultuser WITH SUPERUSER PASSWORD 'vaultpass';\\\"\" || true && vault server -dev -dev-root-token-id=root & sleep 2 && vault secrets enable -path=secrets kv && vault auth enable approle && vault secrets enable database && vault write database/config/meu-postgres plugin_name=postgresql-database-plugin allowed_roles=minha-role connection_url='postgresql://{{username}}:{{password}}@127.0.0.1:5432/postgres?sslmode=disable' username=vaultuser password=vaultpass && vault write database/roles/minha-role db_name=meu-postgres creation_statements=\"CREATE ROLE \\\"{{name}}\\\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}'; GRANT SELECT ON ALL TABLES IN SCHEMA public TO \\\"{{name}}\\\";\" default_ttl=1h max_ttl=24h",
     
     // Skip setcap configuration in the container for Codespaces
     "containerEnv": {
